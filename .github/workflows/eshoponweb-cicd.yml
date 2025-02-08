@@ -1,6 +1,6 @@
 name: eShopOnWeb Build and Deploy
 
-on: [push, workflow_dispatch]  
+on: [push, workflow_dispatch]
 
 env:
   RESOURCE_GROUP: eshoponweb-rg
@@ -39,11 +39,15 @@ jobs:
         zip -r $DOTNET_ROOT/app.zip $DOTNET_ROOT/deploy
         ls -lah $DOTNET_ROOT/  # Confirm app.zip exists
 
+    - name: Debug - Check File Before Upload
+      run: ls -lah /home/runner/.dotnet/
+
     - name: Upload artifact for deployment job
       uses: actions/upload-artifact@v4
       with:
         name: dotnet-app
         path: /home/runner/.dotnet/app.zip
+        if-no-files-found: error  # Fail early if file is missing
 
     - name: Upload Bicep Template
       uses: actions/upload-artifact@v4
@@ -59,8 +63,8 @@ jobs:
     steps:
     - name: Check Available Artifacts
       run: |
-        echo "Checking available artifacts"
-        find ${{ runner.temp }}/artifact/ -type f || echo "No artifacts found!"
+        echo "Checking available artifacts..."
+        ls -lah ${{ runner.temp }}/artifact/ || echo "No artifacts found!"
 
     - name: Download dotnet-app Artifact
       uses: actions/download-artifact@v4
