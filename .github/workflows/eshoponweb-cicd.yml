@@ -3,7 +3,7 @@ name: eShopOnWeb Build and Test
 on: [push, workflow_dispatch]  # Correct trigger
 
 env:
-  RESOURCE_GROUP: eshop0nweb-rg
+  RESOURCE_GROUP: eshoponweb-rg
   LOCATION: eastasia
   TEMPLATE_FILE: infra/webapp.bicep
   SUBSCRIPTION_ID: 98c13e3f-ff9d-4f3f-a523-939b9f7de9a5
