@@ -1,6 +1,6 @@
 name: eShopOnWeb Build and Deploy
 
-on: [push, workflow_dispatch]  # Triggers on push and manual execution
+on: [push, workflow_dispatch]  
 
 env:
   RESOURCE_GROUP: eshoponweb-rg
@@ -35,11 +35,11 @@ jobs:
         export DOTNET_ROOT=${DOTNET_ROOT:-/home/runner/.dotnet}
         mkdir -p $DOTNET_ROOT/deploy
         dotnet publish ./src/Web/Web.csproj -c Release -o $DOTNET_ROOT/deploy
-        cd $DOTNET_ROOT/deploy
-        zip -r ../app.zip .
+        ls -lah $DOTNET_ROOT/deploy   # <-- Debugging step to check published files
+        zip -r $DOTNET_ROOT/app.zip $DOTNET_ROOT/deploy
 
     - name: Debug - List Published Files
-      run: ls -lah /home/runner/.dotnet/deploy && ls -lah /home/runner/.dotnet/
+      run: ls -lah /home/runner/.dotnet/
 
     - name: Upload artifact for deployment job
       uses: actions/upload-artifact@v4
