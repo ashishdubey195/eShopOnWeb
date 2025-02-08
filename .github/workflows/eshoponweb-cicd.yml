@@ -14,6 +14,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
+      
+    - name: Debug - List repository files
+      run: ls -R
 
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
@@ -21,11 +24,14 @@ jobs:
         dotnet-version: '8.0.x'
         dotnet-quality: 'preview'
 
+    - name: Restore dependencies
+      run: dotnet restore eShopOnWeb.sln
+
     - name: Build with dotnet
-      run: dotnet build ./eShopOnWeb.sln --configuration Release
+      run: dotnet build eShopOnWeb.sln --configuration Release
 
     - name: Test with dotnet
-      run: dotnet test ./eShopOnWeb.sln --configuration Release
+      run: dotnet test eShopOnWeb.sln --configuration Release
 
     - name: dotnet publish
       run: |
@@ -37,14 +43,14 @@ jobs:
     - name: Upload artifact for deployment job
       uses: actions/upload-artifact@v4
       with:
-        name: dotnet-app  # Fixed name
-        path: ${{ env.DOTNET_ROOT }}/app.zip
+        name: dotnet-app
+        path: /home/runner/.dotnet/app.zip
 
     - name: Upload artifact for deployment job
       uses: actions/upload-artifact@v4
       with:
         name: bicep-template
-        path: ${{ env.TEMPLATE_FILE }}
+        path: infra/webapp.bicep
 
   deploy:
     runs-on: ubuntu-latest
@@ -56,7 +62,10 @@ jobs:
       uses: actions/download-artifact@v4
       with:
         name: dotnet-app
-        path: dotnet-app  # Fixed directory name
+        path: dotnet-app
+
+    - name: Debug - List dotnet-app directory
+      run: ls -R dotnet-app
 
     - name: Download artifact from build job
       uses: actions/download-artifact@v4
@@ -77,14 +86,6 @@ jobs:
         template: bicep-template/webapp.bicep
         parameters: 'webAppName=${{ env.WEBAPP_NAME }} location=${{ env.LOCATION }}'
         failOnStdErr: false   
-
-    - name: Publish Website to WebApp
-      if: false  # Disabled step
-      uses: Azure/webapps-deploy@v3
-      with:
-        type: ZIP
-        app-name: ${{ env.WEBAPP_NAME }}
-        package: dotnet-app/app.zip  # Fixed path
 
     - name: Publish Website to WebApp
       uses: Azure/cli@v2
