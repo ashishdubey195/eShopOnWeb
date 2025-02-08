@@ -1,4 +1,4 @@
-name: eShopOnWeb Build and Test
+name: eShopOnWeb Build and Deploy
 
 on: [push, workflow_dispatch]  # Triggers on push and manual execution
 
@@ -20,40 +20,38 @@ jobs:
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: '8.0.x'
-        dotnet-quality: 'preview'
 
     - name: Restore dependencies
       run: dotnet restore eShopOnWeb.sln
 
     - name: Build with dotnet
-      run: dotnet build eShopOnWeb.sln --configuration Release
+      run: dotnet build eShopOnWeb.sln --configuration Release --no-restore
 
     - name: Test with dotnet
-      run: dotnet test eShopOnWeb.sln --configuration Release
+      run: dotnet test eShopOnWeb.sln --configuration Release --no-build
 
-    - name: dotnet publish
+    - name: Publish app
       run: |
         export DOTNET_ROOT=${DOTNET_ROOT:-/home/runner/.dotnet}
-        mkdir -p $DOTNET_ROOT/myapp
-        dotnet publish ./src/Web/Web.csproj -c Release -o $DOTNET_ROOT/myapp
-        cd $DOTNET_ROOT/myapp
+        mkdir -p $DOTNET_ROOT/deploy
+        dotnet publish ./src/Web/Web.csproj -c Release -o $DOTNET_ROOT/deploy
+        cd $DOTNET_ROOT/deploy
         zip -r ../app.zip .
 
     - name: Debug - List Published Files
-      run: ls -lah /home/runner/.dotnet/
+      run: ls -lah /home/runner/.dotnet/deploy && ls -lah /home/runner/.dotnet/
 
     - name: Upload artifact for deployment job
       uses: actions/upload-artifact@v4
       with:
         name: dotnet-app
         path: /home/runner/.dotnet/app.zip
-        
+
     - name: Upload Bicep Template
       uses: actions/upload-artifact@v4
       with:
         name: bicep-template
         path: ${{ env.TEMPLATE_FILE }}
-       
 
   deploy:
     runs-on: ubuntu-latest
@@ -61,9 +59,6 @@ jobs:
     environment:
       name: 'Development'
     steps:
-    - name: List Available Artifacts
-      run: ls -lah $GITHUB_WORKSPACE  # Check if artifacts exist
-
     - name: Download dotnet-app Artifact
       uses: actions/download-artifact@v4
       with:
@@ -93,8 +88,11 @@ jobs:
         parameters: 'webAppName=${{ env.WEBAPP_NAME }} location=${{ env.LOCATION }}'
         failOnStdErr: false   
 
-    - name: Publish Website to WebApp
-      uses: Azure/cli@v2
+    - name: Deploy WebApp via ZIP
+      uses: azure/cli@v2
       with:
         inlineScript: |
-          az webapp deployment source config-zip --resource-group ${{ env.RESOURCE_GROUP }} --name ${{ env.WEBAPP_NAME }} --src dotnet-app/app.zip
+          az webapp deployment source config-zip \
+          --resource-group ${{ env.RESOURCE_GROUP }} \
+          --name ${{ env.WEBAPP_NAME }} \
+          --src dotnet-app/app.zip
