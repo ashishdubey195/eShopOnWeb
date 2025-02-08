@@ -26,34 +26,35 @@ jobs:
       run: dotnet restore eShopOnWeb.sln
 
     - name: Build with dotnet
-      run: dotnet build eShopOnWeb.sln --configuration Release --no-restore
+      run: dotnet build eShopOnWeb.sln --configuration Release
 
     - name: Test with dotnet
-      run: dotnet test eShopOnWeb.sln --configuration Release --no-build
+      run: dotnet test eShopOnWeb.sln --configuration Release
 
     - name: dotnet publish
       run: |
         export DOTNET_ROOT=${DOTNET_ROOT:-/home/runner/.dotnet}
+        mkdir -p $DOTNET_ROOT/myapp
         dotnet publish ./src/Web/Web.csproj -c Release -o $DOTNET_ROOT/myapp
         cd $DOTNET_ROOT/myapp
-        zip -r app.zip .
+        zip -r ../app.zip .
 
     - name: Debug - List Published Files
-      run: ls -lah ${{ github.workspace }}
+      run: ls -lah /home/runner/.dotnet/
 
     - name: Upload artifact for deployment job
       uses: actions/upload-artifact@v4
       with:
         name: dotnet-app
-        path: app.zip  # Fix: Upload from workspace, not ~/.dotnet
-        retention-days: 5
+        path: /home/runner/.dotnet/app.zip
+        retention-days: 10  # Increased retention period
 
     - name: Upload Bicep Template
       uses: actions/upload-artifact@v4
       with:
         name: bicep-template
         path: ${{ env.TEMPLATE_FILE }}
-        retention-days: 5
+        retention-days: 10
 
   deploy:
     runs-on: ubuntu-latest
@@ -61,8 +62,8 @@ jobs:
     environment:
       name: 'Development'
     steps:
-    - name: Debug - List Available Artifacts Before Download
-      run: echo "Checking available artifacts"
+    - name: List Available Artifacts
+      run: ls -lah $GITHUB_WORKSPACE  # Check if artifacts exist
 
     - name: Download dotnet-app Artifact
       uses: actions/download-artifact@v4
