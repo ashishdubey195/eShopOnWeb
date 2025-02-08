@@ -60,7 +60,7 @@ jobs:
     - name: Check Available Artifacts
       run: |
         echo "Checking available artifacts"
-        ls -lah ${{ runner.temp }}/artifact/
+        find ${{ runner.temp }}/artifact/ -type f || echo "No artifacts found!"
 
     - name: Download dotnet-app Artifact
       uses: actions/download-artifact@v4
