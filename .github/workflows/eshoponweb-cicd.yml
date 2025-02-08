@@ -47,14 +47,13 @@ jobs:
       with:
         name: dotnet-app
         path: /home/runner/.dotnet/app.zip
-        retention-days: 10  # Increased retention period
-
+        
     - name: Upload Bicep Template
       uses: actions/upload-artifact@v4
       with:
         name: bicep-template
         path: ${{ env.TEMPLATE_FILE }}
-        retention-days: 10
+       
 
   deploy:
     runs-on: ubuntu-latest
